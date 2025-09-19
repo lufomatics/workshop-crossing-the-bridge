@@ -1,0 +1,201 @@
+name: Step 3 - Call The Second Oracle
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  models: read
+
+env:
+  STEP_4_FILE: ".github/steps/4-bridge-synthesis.md"
+  DISPLAY_LANGUAGE: "pt-BR"
+
+jobs:
+  find-workshop-issue:
+    name: Find the workshop issue
+    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.0
+    with:
+      issue-title-text: 'Workshop'
+
+  consult-second-oracle:
+    name: Ask the remaining oracle
+    runs-on: ubuntu-latest
+    needs: [find-workshop-issue]
+    if: |
+      !github.event.repository.is_template &&
+      github.event.issue.pull_request == null &&
+      needs.find-workshop-issue.outputs.issue-number == github.event.issue.number &&
+      github.event.sender.login == github.repository_owner &&
+      (
+        contains(github.event.comment.body, '/o3ceratops') ||
+        contains(github.event.comment.body, '@o3ceratops') ||
+        contains(github.event.comment.body, '/anthropiclaudio') ||
+        contains(github.event.comment.body, '@anthropiclaudio')
+      )
+
+    steps:
+      - name: Interpretar o comando
+        id: parse-command
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const bodyLower = context.payload.comment.body.toLowerCase();
+            const original = context.payload.comment.body;
+            const issueNumber = context.issue.number;
+
+            const triggers = [
+              {
+                tag: 'o3ceratops',
+                markers: ['/o3ceratops', '@o3ceratops'],
+                model: 'openai/gpt-4.1',
+                display: 'GPT-4.1'
+              },
+              {
+                tag: 'anthropiclaudio',
+                markers: ['/anthropiclaudio', '@anthropiclaudio'],
+                model: 'openai/gpt-4o',
+                display: 'GPT-4o'
+              }
+            ];
+
+            const invocation = triggers.find(option => option.markers.some(marker => bodyLower.includes(marker)));
+
+            if (!invocation) {
+              core.setOutput('should-run', 'false');
+              return;
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+
+            const gpt41Exists = comments.some(comment => comment.body?.includes('Crossing The Bridge • GPT-4.1'));
+            const gpt4oExists = comments.some(comment => comment.body?.includes('Crossing The Bridge • GPT-4o'));
+
+            let shouldRun = false;
+            if (invocation.display === 'GPT-4.1') {
+              shouldRun = !gpt41Exists && gpt4oExists;
+            } else {
+              shouldRun = !gpt4oExists && gpt41Exists;
+            }
+
+            const prompt = `A participant already consulted one oracle inside ${context.repo.owner}/${context.repo.repo}. ` +
+              `You represent ${invocation.display}, the alternate viewpoint. ` +
+              `In two concise paragraphs, contrast your perspective with the previous oracle and suggest how the participant ` +
+              `can combine both answers to improve their AI-driven continuous development workflow. Use friendly, practical language. Answer in ${{ env.DISPLAY_LANGUAGE }}.`;
+
+            const usedCommand = invocation.markers.find(marker => original.includes(marker)) ?? invocation.markers[0];
+
+            core.setOutput('model', invocation.model);
+            core.setOutput('display', invocation.display);
+            core.setOutput('command', usedCommand);
+            core.setOutput('prompt', prompt);
+            core.setOutput('should-run', shouldRun ? 'true' : 'false');
+            core.setOutput('gpt41', gpt41Exists ? 'true' : 'false');
+            core.setOutput('gpt4o', gpt4oExists ? 'true' : 'false');
+
+      - name: Registrar motivo para não executar
+        if: steps.parse-command.outputs.should-run != 'true'
+        run: |
+          echo "Comentário ignorado: aguardamos o oráculo complementar adequado." \
+            "(GPT-4.1 pronto? ${{ steps.parse-command.outputs.gpt41 }} / GPT-4o pronto? ${{ steps.parse-command.outputs.gpt4o }})"
+
+      - name: Checkout
+        if: steps.parse-command.outputs.should-run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Atualizar status no README
+        if: steps.parse-command.outputs.should-run == 'true'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          status = "🎯 Dois oráculos consultados! Execute o Step 4 nas Actions para gerar o resumo encenado."
+          path = Path('README.md')
+          text = path.read_text()
+          start = '<!--WORKSHOP_STATUS-->'
+          end = '<!--END_WORKSHOP_STATUS-->'
+          if start not in text or end not in text:
+              raise SystemExit('Workshop status markers not found in README.md')
+          prefix, _, rest = text.partition(start)
+          _, _, suffix = rest.partition(end)
+          path.write_text(f"{prefix}{start}{status}{end}{suffix}")
+          PY
+
+      - name: Commit status update
+        if: steps.parse-command.outputs.should-run == 'true'
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: README.md
+          message: "workshop status: resumo encenado liberado"
+          default_author: github_actions
+          pull: --rebase --autostash
+
+      - name: Consultar modelo de IA
+        if: steps.parse-command.outputs.should-run == 'true'
+        id: ai-response
+        uses: actions/ai-inference@v1
+        with:
+          system-prompt: |
+            You are the alternate bridge oracle.
+            Emphasize synthesis and collaboration between multiple AI viewpoints.
+          prompt: ${{ steps.parse-command.outputs.prompt }}
+          model: ${{ steps.parse-command.outputs.model }}
+
+      - name: Construir comentário do oráculo
+        if: steps.parse-command.outputs.should-run == 'true'
+        env:
+          RESPONSE: ${{ steps.ai-response.outputs.response }}
+          DISPLAY: ${{ steps.parse-command.outputs.display }}
+          COMMAND: ${{ steps.parse-command.outputs.command }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          response = os.environ['RESPONSE'].strip()
+          display = os.environ['DISPLAY']
+          command = os.environ['COMMAND']
+          sender = os.environ['SENDER']
+
+          body = f"### Crossing The Bridge • {display}\n"
+          body += f"**Invocador:** @{sender}\n"
+          body += f"**Comando:** `{command}`\n\n"
+          body += f"{response}\n"
+
+          Path('second-oracle.md').write_text(body)
+          PY
+
+      - name: Publicar visão do segundo oráculo
+        if: steps.parse-command.outputs.should-run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_URL: ${{ needs.find-workshop-issue.outputs.issue-url }}
+        run: |
+          gh issue comment "$ISSUE_URL" \
+            --body-file second-oracle.md
+
+      - name: Compartilhar próxima etapa
+        if: steps.parse-command.outputs.should-run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_URL: ${{ needs.find-workshop-issue.outputs.issue-url }}
+        run: |
+          gh issue comment "$ISSUE_URL" \
+            --body-file "$STEP_4_FILE"
+
+      - name: Alternar workflows
+        if: steps.parse-command.outputs.should-run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow enable "Step 4 - Synthesize The Bridge Story"
+          gh workflow disable "Step 3 - Call The Second Oracle"

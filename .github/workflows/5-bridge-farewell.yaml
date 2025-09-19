@@ -1,0 +1,84 @@
+name: Step 5 - Farewell Across The Bridge
+
+on:
+  issues:
+    types: [closed, deleted]
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+  models: read
+
+env:
+  WORKSHOP_STATUS_DONE: "🌟 Travessia concluída! Revise os comentários finais ou copie o repositório novamente para recomeçar."
+
+jobs:
+  find-workshop-issue:
+    name: Find the workshop issue
+    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.0
+    with:
+      issue-title-text: 'Workshop'
+      include-closed-issues: true
+
+  wrap-up:
+    name: Wrap up the journey
+    runs-on: ubuntu-latest
+    needs: [find-workshop-issue]
+    if: |
+      !github.event.repository.is_template &&
+      needs.find-workshop-issue.outputs.issue-number == github.event.issue.number
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Atualizar status no README
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+
+          status = os.environ['WORKSHOP_STATUS_DONE']
+          path = Path('README.md')
+          text = path.read_text()
+          start = '<!--WORKSHOP_STATUS-->'
+          end = '<!--END_WORKSHOP_STATUS-->'
+          if start not in text or end not in text:
+              raise SystemExit('Workshop status markers not found in README.md')
+          prefix, _, rest = text.partition(start)
+          _, _, suffix = rest.partition(end)
+          path.write_text(f"{prefix}{start}{status}{end}{suffix}")
+          PY
+
+      - name: Commit status update
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: README.md
+          message: "workshop status: jornada concluida"
+          default_author: github_actions
+          pull: --rebase --autostash
+
+      - name: Deixar recado final
+        if: github.event.action == 'closed'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          cat <<'MSG' > farewell.md
+          A travessia do workshop foi concluída! ⭐ Se este fluxo ajudou, considere dar uma estrela em [lufomatics/reusable-workshops](https://github.com/lufomatics/reusable-workshops).
+
+          Quer experimentar fluxos agentic por conta própria? Escolha um projeto em [github.com/agentics](https://github.com/agentics), abra um Codespace aqui mesmo e execute:
+
+          ```bash
+          gh aw add <url-do-repositorio-agentic>
+          ```
+
+          A extensão **gh aw** já está instalada neste ambiente; basta configurar o token conforme a documentação para começar. Boa exploração!
+          MSG
+
+          gh issue comment "$ISSUE_URL" --body-file farewell.md
+
+      - name: Registrar ação de exclusão
+        if: github.event.action == 'deleted'
+        run: echo "Workshop issue excluída; README atualizado para refletir a conclusão."

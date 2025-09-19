@@ -1,0 +1,85 @@
+name: Step 0 - Crossing Prologue
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  actions: write
+  issues: write
+
+env:
+  TEMPLATES_REPOSITORY: "lufomatics/reusable-workshops"
+  STEP_1_FILE: ".github/steps/1-codespace-awakening.md"
+  PROGRESS_FILE: ".github/steps/progress-signal.md"
+
+jobs:
+  start-workshop:
+    if: |
+      !github.event.repository.is_template
+    name: Start Workshop
+    uses: lufomatics/reusable-workshops/.github/workflows/setup-workshop-repository.yaml@v0.2.0
+    with:
+      workshop-title: "Crossing The Bridge"
+      intro-message: "Bem-vindo(a)! Vamos atravessar a ponte e conectar IA ao seu fluxo de desenvolvimento contínuo."
+
+  post-next-step-content:
+    name: Prepare next step
+    runs-on: ubuntu-latest
+    needs: [start-workshop]
+    if: |
+      !github.event.repository.is_template
+
+    env:
+      ISSUE_URL: ${{ needs.start-workshop.outputs.issue-url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Atualizar status no README
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          status = "🟢 O Codespace guardião aguarda seu despertar. Abra um Codespace e retorne a esta issue para continuar."
+          path = Path('README.md')
+          text = path.read_text()
+          start = '<!--WORKSHOP_STATUS-->'
+          end = '<!--END_WORKSHOP_STATUS-->'
+          if start not in text or end not in text:
+              raise SystemExit('Workshop status markers not found in README.md')
+          prefix, _, rest = text.partition(start)
+          _, _, suffix = rest.partition(end)
+          path.write_text(f"{prefix}{start}{status}{end}{suffix}")
+          PY
+
+      - name: Commit status update
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: README.md
+          message: "workshop status: aguardando codespace"
+          default_author: github_actions
+          pull: --rebase --autostash
+
+      - name: Post Step 1 instructions
+        run: |
+          gh issue comment "$ISSUE_URL" \
+            --body-file "$STEP_1_FILE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compartilhar aviso de monitoramento
+        run: |
+          gh issue comment "$ISSUE_URL" \
+            --body-file "$PROGRESS_FILE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable next workflow
+        run: |
+          gh workflow enable "Step 1 - Awaken The Codespace"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
