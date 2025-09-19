@@ -15,9 +15,9 @@ env:
 jobs:
   find-workshop-issue:
     name: Find the workshop issue
-    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.0
+    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.1
     with:
-      issue-title-text: 'Workshop'
+      issue-title-text: "Workshop"
 
   acknowledge-awakening:
     name: Confirm codespace awakening
