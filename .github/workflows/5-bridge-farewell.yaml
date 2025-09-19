@@ -18,7 +18,7 @@ jobs:
     name: Find the workshop issue
     uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.0
     with:
-      issue-title-text: 'Workshop'
+      issue-title-text: "Workshop"
       include-closed-issues: true
 
   wrap-up:
@@ -53,6 +53,7 @@ jobs:
 
       - name: Commit status update
         uses: EndBug/add-and-commit@v9
+        continue-on-error: true
         with:
           add: README.md
           message: "workshop status: jornada concluida"

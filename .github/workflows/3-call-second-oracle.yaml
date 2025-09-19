@@ -132,6 +132,7 @@ jobs:
       - name: Commit status update
         if: steps.parse-command.outputs.should-run == 'true'
         uses: EndBug/add-and-commit@v9
+        continue-on-error: true
         with:
           add: README.md
           message: "workshop status: resumo encenado liberado"
