@@ -1,23 +1,46 @@
 {
   "name": "Universal Codespace",
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "remoteEnv": {
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+    "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+    "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+    "NO_PROXY": "${localEnv:NO_PROXY}"
+  },
+
   "postCreateCommand": ".devcontainer/post-create.sh",
   "postStartCommand": ".devcontainer/post-start.sh",
+
+  "features": {
+    // "ghcr.io/devcontainers/features/common-utils:2": {}, // Already included in base:ubuntu
+    // "ghcr.io/devcontainers/features/git:1": {}, // Already included in base:ubuntu
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
+    "ghcr.io/devcontainers/features/go:1": {}
+  },
+
   "customizations": {
     "codespaces": {
       "openFiles": ["README.md"]
     },
+
     "vscode": {
       "extensions": [
-        "bierner.markdown-preview-github-styles",
-        "davidanson.vscode-markdownlint",
-        "esbenp.prettier-vscode",
-        "github.copilot",
-        "github.copilot-chat",
-        "github.vscode-github-actions",
-        "github.vscode-pull-request-github",
-        "redhat.vscode-yaml",
-        "yzhang.markdown-all-in-one"
+        "github.vscode-pull-request-github", // Manage GitHub PRs and Issues
+        "github.copilot", // GitHub Copilot + Copilot Chat
+        "github.vscode-github-actions", // GitHub Actions integration
+        
+        "bierner.markdown-preview-github-styles", // Preview GitHub-flavored Markdown
+        "davidanson.vscode-markdownlint", // Markdown quality and consistency
+        "yzhang.markdown-all-in-one", // Markdown productivity helpers
+        "esbenp.prettier-vscode", // Fallback code formatter
+
+        "redhat.vscode-yaml", // YAML language support
+        "ms-azuretools.vscode-docker" // Docker support
       ],
       "settings": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -25,11 +48,10 @@
         "editor.formatOnSave": true,
         "markdown.extension.list.indentationSize": "adaptive",
         "markdown.extension.italic.indicator": "_",
-        "markdown.extension.orderedList.marker": "one"
+        "markdown.extension.orderedList.marker": "one",
+        "chat.agent.enabled": true,
+        "chat.mcp.enabled": true
       }
     }
-  },
-  "remoteEnv": {
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   }
 }
