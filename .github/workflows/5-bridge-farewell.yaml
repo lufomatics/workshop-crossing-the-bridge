@@ -16,7 +16,7 @@ env:
 jobs:
   find-workshop-issue:
     name: Find the workshop issue
-    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.1
+    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v1.0.0
     with:
       issue-title-text: "Workshop"
       include-closed-issues: true
@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Atualizar status no README
+      - name: Update workshop status in README
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -60,19 +60,19 @@ jobs:
           default_author: github_actions
           pull: --rebase --autostash
 
-      - name: Deixar recado final
+      - name: Post farewell message
         if: github.event.action == 'closed'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
           cat <<'MSG' > farewell.md
-          A travessia do workshop foi concluída! ⭐ Se este fluxo ajudou, considere dar uma estrela em [lufomatics/reusable-workshops](https://github.com/lufomatics/reusable-workshops).
+          A travessia do workshop foi concluída! ⭐ Se este fluxo ajudou, considere dar uma estrela em [lufomatics/workshop-crossing-the-bridge](https://github.com/lufomatics/workshop-crossing-the-bridge/subscription) e em [lufomatics/reusable-workshops](https://github.com/lufomatics/reusable-workshops/subscription) para apoiar a criação de mais experiências como esta.
 
-          Quer experimentar fluxos agentic por conta própria? Escolha um projeto em [github.com/agentics](https://github.com/agentics), abra um Codespace aqui mesmo e execute:
+          Quer experimentar os mais novos agentic workflows por conta própria? Escolha um projeto em [Agentic Workflows](https://githubnext.github.io/gh-aw/), abra um Codespace aqui mesmo e execute:
 
           ```bash
-          gh aw add <url-do-repositorio-agentic>
+          gh aw add <url-do-repositorio-agentic> --pr
           ```
 
           A extensão **gh aw** já está instalada neste ambiente; basta configurar o token conforme a documentação para começar. Boa exploração!
@@ -80,6 +80,6 @@ jobs:
 
           gh issue comment "$ISSUE_URL" --body-file farewell.md
 
-      - name: Registrar ação de exclusão
+      - name: Acknowledge issue deletion
         if: github.event.action == 'deleted'
         run: echo "Workshop issue excluída; README atualizado para refletir a conclusão."

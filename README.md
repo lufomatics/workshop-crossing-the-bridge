@@ -30,29 +30,31 @@ Todo o fluxo é baseado no repositório de templates [lufomatics/reusable-worksh
 
 ## Como iniciar
 
-1. Clique com o botão direito em **Copy Workshop** e abra o link em uma nova aba.
+1. Clique no botão **`📠Prepare Workshop`** abaixo para iniciar seu repositório a partir deste template.
 
-   <a id="copy-workshop" href="https://github.com/new?template_owner=lufomatics&template_name=workshop-crossing-the-bridge&owner=%40me&name=workshop-crossing-the-bridge&description=Workshop:+Crossing+The+Bridge&visibility=public">
-      <img src="https://img.shields.io/badge/📠_Copy_Workshop-008000" height="25pt"/>
+   <a id="prepare-workshop" href="https://github.com/new?template_owner=lufomatics&template_name=workshop-crossing-the-bridge&owner=%40me&name=workshop-crossing-the-bridge&description=Workshop:+Crossing+The+Bridge&visibility=public">
+      <img src="https://img.shields.io/badge/📠_Prepare_Workshop-008000" height="25pt"/>
    </a>
 
 2. Na nova aba, revise as opções preenchidas automaticamente:
-   - Em **Owner**, escolha sua conta ou a organização onde deseja hospedar o repositório.
-   - Prefira criar o repositório como público para aproveitar minutos gratuitos de GitHub Actions.
-   - Clique em **Create repository**.
 
-3. Aguarde cerca de 20 segundos até que os fluxos estejam configurados. É normal precisar atualizar a página.
-   - O botão **Copy Workshop** ficará cinza indicando que a cópia foi concluída.
-   - O botão **Start Workshop** será habilitado com o link para a issue automatizada.
+   - Em **Owner**, garanta que sua conta pessoal esteja selecionada;
+   - Prefira criar o repositório como público para aproveitar minutos gratuitos de GitHub Actions;
+   - Clique em `Create repository`.
 
-4. Abra a issue indicada pelo botão **Start Workshop** para seguir a narrativa. Quando o sinal for dado, crie um Codespace para prosseguir.
+3. Aguarde cerca de 25 segundos até que os fluxos estejam configurados. É normal precisar atualizar a página.
+
+   - O botão `📠Prepare Workshop` ficará cinza indicando que a cópia foi concluída.
+   - O botão **`🚀Start Workshop`** será habilitado e irá te direcionar para as próximas instruções.
+
+4. Clique no botão **`🚀Start Workshop`** abaixo, que irá te redirecionar para uma GitHub Issue que servirá como seu guia personalizado durante o workshop, acompanhando seu progresso e fornecendo instruções a cada passo concluído.
 
    <a id="start-workshop">
       <img src="https://img.shields.io/badge/🚀_Start_Workshop-AAA" height="25pt"/>
    </a>
 
-> [!IMPORTANT]
-> Este workshop depende da issue principal. Todas as instruções e interações com IA acontecem lá — mantenha as notificações ativas para acompanhar as mensagens do bot.
+> [!TIP]
+> Este botão permanecerá ativo no decorrer do workshop. A qualquer momento, caso perca a página da Issue de acompanhamento, basta clicar em **`🚀Start Workshop`** e você será redirecionado para as próximas instruções.
 
 ---
 

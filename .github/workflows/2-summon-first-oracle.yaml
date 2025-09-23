@@ -17,7 +17,7 @@ env:
 jobs:
   find-workshop-issue:
     name: Find the workshop issue
-    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v0.2.1
+    uses: lufomatics/reusable-workshops/.github/workflows/find-workshop-issue.yaml@v1.0.0
     with:
       issue-title-text: "Workshop"
 
@@ -38,7 +38,7 @@ jobs:
       )
 
     steps:
-      - name: Interpretar o comando
+      - name: Parse command from issue comment
         id: parse-command
         uses: actions/github-script@v7
         with:
@@ -84,7 +84,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Atualizar status no README
+      - name: Update workshop status in README
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -110,7 +110,7 @@ jobs:
           default_author: github_actions
           pull: --rebase --autostash
 
-      - name: Consultar modelo de IA
+      - name: Invoke AI oracle
         id: ai-response
         uses: actions/ai-inference@v1
         with:
@@ -120,7 +120,7 @@ jobs:
           prompt: ${{ steps.parse-command.outputs.prompt }}
           model: ${{ steps.parse-command.outputs.model }}
 
-      - name: Construir comentário do oráculo
+      - name: Prepare oracle response comment
         env:
           RESPONSE: ${{ steps.ai-response.outputs.response }}
           DISPLAY: ${{ steps.parse-command.outputs.display }}
@@ -144,7 +144,7 @@ jobs:
           Path('oracle-comment.md').write_text(body)
           PY
 
-      - name: Publicar visão do oráculo
+      - name: Post oracle response comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_URL: ${{ needs.find-workshop-issue.outputs.issue-url }}
@@ -152,7 +152,7 @@ jobs:
           gh issue comment "$ISSUE_URL" \
             --body-file oracle-comment.md
 
-      - name: Compartilhar próxima etapa
+      - name: Post instructions for next step
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_URL: ${{ needs.find-workshop-issue.outputs.issue-url }}
@@ -160,7 +160,7 @@ jobs:
           gh issue comment "$ISSUE_URL" \
             --body-file "$STEP_3_FILE"
 
-      - name: Alternar workflows
+      - name: Disable this workflow and enable the next one
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
